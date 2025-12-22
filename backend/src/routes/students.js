@@ -1,0 +1,9 @@
+const express = require('express');
+const router = express.Router();
+router.get('/', (req, res) => res.json({ success: true, data: [] }));
+router.post('/', (req, res) => res.json({ success: true, message: 'Created' }));
+router.post('/import', (req, res) => res.json({ success: true, message: 'Imported' }));
+router.get('/:id', (req, res) => res.json({ success: true, data: null }));
+router.put('/:id', (req, res) => res.json({ success: true, message: 'Updated' }));
+router.delete('/:id', (req, res) => res.json({ success: true, message: 'Deleted' }));
+module.exports = router;

@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+router.get('/', (req, res) => res.json({ success: true, data: [] }));
+router.get('/:id', (req, res) => res.json({ success: true, data: null }));
+router.put('/:id', (req, res) => res.json({ success: true, message: 'Updated' }));
+router.post('/:id/block', (req, res) => res.json({ success: true, message: 'User blocked' }));
+router.post('/:id/unblock', (req, res) => res.json({ success: true, message: 'User unblocked' }));
+router.post('/:id/reset-password', (req, res) => res.json({ success: true, message: 'Password reset' }));
+router.delete('/:id', (req, res) => res.json({ success: true, message: 'Deleted' }));
+module.exports = router;

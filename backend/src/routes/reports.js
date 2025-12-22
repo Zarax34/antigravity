@@ -1,0 +1,11 @@
+const express = require('express');
+const router = express.Router();
+router.get('/', (req, res) => res.json({ success: true, data: [] }));
+router.post('/', (req, res) => res.json({ success: true, message: 'Created' }));
+router.post('/group', (req, res) => res.json({ success: true, message: 'Group report created' }));
+router.get('/:id', (req, res) => res.json({ success: true, data: null }));
+router.put('/:id', (req, res) => res.json({ success: true, message: 'Updated' }));
+router.post('/:id/approve', (req, res) => res.json({ success: true, message: 'Approved' }));
+router.post('/:id/reject', (req, res) => res.json({ success: true, message: 'Rejected' }));
+router.delete('/:id', (req, res) => res.json({ success: true, message: 'Deleted' }));
+module.exports = router;

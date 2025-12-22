@@ -1,0 +1,427 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  SYSTEM_ADMIN
+  CENTER_MANAGER
+  TEACHER
+  COMMUNICATION_MANAGER
+  PARENT
+  STUDENT
+}
+
+enum HalqaCategory {
+  YOUTH
+  CUBS
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  ESCAPED
+  DID_NOT_RECITE
+  EXCUSED_ABSENCE
+}
+
+enum RecitationType {
+  MEMORIZATION
+  REVIEW
+  RECITATION
+  TEACHING
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  PARTIAL
+}
+
+enum ConsentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReportStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum HolidayStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ==================== MODELS ====================
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  fullName     String
+  email        String?
+  phone        String?
+  role         UserRole
+  centerId     String?
+  halqaId      String?
+  profileImage String?
+  isActive     Boolean  @default(true)
+  isBlocked    Boolean  @default(false)
+  fcmToken     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  center       Center?  @relation(fields: [centerId], references: [id])
+  halqa        Halqa?   @relation(fields: [halqaId], references: [id])
+  
+  // Relations
+  managedCenters    Center[]          @relation("CenterManager")
+  taughtHalqat      Halqa[]           @relation("HalqaTeacher")
+  createdReports    DailyReport[]     @relation("ReportCreator")
+  reviewedReports   DailyReport[]     @relation("ReportReviewer")
+  responsibleCourses Course[]
+  createdAnnouncements Announcement[]
+  linkedStudents    Student[]         @relation("ParentStudent")
+}
+
+model Center {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  logo        String?
+  address     String?
+  phone       String?
+  email       String?
+  managerId   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager     User?    @relation("CenterManager", fields: [managerId], references: [id])
+  
+  // Relations
+  halqat        Halqa[]
+  students      Student[]
+  courses       Course[]
+  activities    Activity[]
+  fees          Fee[]
+  holidays      Holiday[]
+  announcements Announcement[]
+  users         User[]
+}
+
+model Halqa {
+  id           String        @id @default(uuid())
+  name         String
+  centerId     String
+  teacherId    String?
+  teacherName  String?
+  category     HalqaCategory
+  studentCount Int           @default(0)
+  maxStudents  Int           @default(30)
+  description  String?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  center       Center        @relation(fields: [centerId], references: [id])
+  teacher      User?         @relation("HalqaTeacher", fields: [teacherId], references: [id])
+  
+  // Relations
+  students     Student[]
+  reports      DailyReport[]
+  users        User[]
+}
+
+model Student {
+  id                  String    @id @default(uuid())
+  fullName            String
+  halqaId             String
+  centerId            String
+  parentName          String
+  parentPhone         String
+  parentId            String?
+  parentJob           String?
+  currentResidence    String?
+  previousResidence   String?
+  governorate         String?
+  age                 Int?
+  birthDate           DateTime?
+  enrollmentDate      DateTime  @default(now())
+  phone               String?
+  profileImage        String?
+  previousMemorization String?
+  notes               String?
+  studentUserId       String?
+  isActive            Boolean   @default(true)
+  isBlocked           Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  halqa               Halqa     @relation(fields: [halqaId], references: [id])
+  center              Center    @relation(fields: [centerId], references: [id])
+  parent              User?     @relation("ParentStudent", fields: [parentId], references: [id])
+  
+  // Relations
+  studentReports      StudentReport[]
+  courseAttendances   CourseAttendance[]
+  courseCertificates  CourseCertificate[]
+  activityConsents    ActivityConsent[]
+  activityAttendances ActivityAttendance[]
+  feePayments         FeePayment[]
+}
+
+model DailyReport {
+  id           String       @id @default(uuid())
+  halqaId      String
+  teacherId    String
+  date         DateTime
+  status       ReportStatus @default(PENDING)
+  reviewedById String?
+  reviewNotes  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  halqa        Halqa        @relation(fields: [halqaId], references: [id])
+  teacher      User         @relation("ReportCreator", fields: [teacherId], references: [id])
+  reviewedBy   User?        @relation("ReportReviewer", fields: [reviewedById], references: [id])
+  
+  // Relations
+  studentReports StudentReport[]
+}
+
+model StudentReport {
+  id               String           @id @default(uuid())
+  reportId         String
+  studentId        String
+  studentName      String
+  attendanceStatus AttendanceStatus
+  notes            String?
+  createdAt        DateTime         @default(now())
+
+  report           DailyReport      @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  student          Student          @relation(fields: [studentId], references: [id])
+  
+  // Relations
+  recitations      Recitation[]
+}
+
+model Recitation {
+  id              String         @id @default(uuid())
+  studentReportId String
+  type            RecitationType
+  surahNumber     Int
+  surahName       String
+  fromVerse       Int
+  toVerse         Int
+  rating          Int?
+  notes           String?
+
+  studentReport   StudentReport  @relation(fields: [studentReportId], references: [id], onDelete: Cascade)
+}
+
+model Course {
+  id                   String   @id @default(uuid())
+  name                 String
+  description          String?
+  image                String?
+  centerId             String
+  responsibleTeacherId String?
+  startDate            DateTime
+  endDate              DateTime
+  targetHalqaIds       String[] @default([])
+  targetStudentIds     String[] @default([])
+  notes                String?
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  center               Center   @relation(fields: [centerId], references: [id])
+  responsibleTeacher   User?    @relation(fields: [responsibleTeacherId], references: [id])
+  
+  // Relations
+  attendances          CourseAttendance[]
+  certificates         CourseCertificate[]
+}
+
+model CourseAttendance {
+  id        String   @id @default(uuid())
+  courseId  String
+  studentId String
+  date      DateTime
+  isPresent Boolean
+  notes     String?
+
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student   Student  @relation(fields: [studentId], references: [id])
+
+  @@unique([courseId, studentId, date])
+}
+
+model CourseCertificate {
+  id             String    @id @default(uuid())
+  courseId       String
+  studentId      String
+  certificateUrl String?
+  issuedAt       DateTime?
+
+  course         Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student        Student   @relation(fields: [studentId], references: [id])
+
+  @@unique([courseId, studentId])
+}
+
+model Activity {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  image          String?
+  centerId       String
+  location       String?
+  startDate      DateTime
+  startTime      DateTime
+  endTime        DateTime
+  targetHalqaIds String[] @default([])
+  notes          String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  center         Center   @relation(fields: [centerId], references: [id])
+  
+  // Relations
+  consents       ActivityConsent[]
+  attendances    ActivityAttendance[]
+}
+
+model ActivityConsent {
+  id          String        @id @default(uuid())
+  activityId  String
+  studentId   String
+  parentId    String
+  status      ConsentStatus @default(PENDING)
+  notes       String?
+  respondedAt DateTime?
+
+  activity    Activity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  student     Student       @relation(fields: [studentId], references: [id])
+
+  @@unique([activityId, studentId])
+}
+
+model ActivityAttendance {
+  id         String   @id @default(uuid())
+  activityId String
+  studentId  String
+  attended   Boolean
+  notes      String?
+  recordedBy String?
+  recordedAt DateTime @default(now())
+
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  student    Student  @relation(fields: [studentId], references: [id])
+
+  @@unique([activityId, studentId])
+}
+
+model Fee {
+  id             String   @id @default(uuid())
+  name           String
+  centerId       String
+  month          Int
+  day            Int
+  amount         Float
+  targetHalqaIds String[] @default([])
+  notes          String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  center         Center   @relation(fields: [centerId], references: [id])
+  
+  // Relations
+  payments       FeePayment[]
+}
+
+model FeePayment {
+  id          String        @id @default(uuid())
+  feeId       String
+  studentId   String
+  halqaId     String
+  status      PaymentStatus @default(UNPAID)
+  paidAmount  Float?
+  paidAt      DateTime?
+  confirmedBy String?
+  notes       String?
+
+  fee         Fee           @relation(fields: [feeId], references: [id], onDelete: Cascade)
+  student     Student       @relation(fields: [studentId], references: [id])
+
+  @@unique([feeId, studentId])
+}
+
+model Holiday {
+  id             String        @id @default(uuid())
+  name           String
+  centerId       String
+  startDate      DateTime
+  endDate        DateTime?
+  targetHalqaIds String[]      @default([])
+  isRecurring    Boolean       @default(false)
+  notes          String?
+  status         HolidayStatus @default(APPROVED)
+  requestedBy    String?
+  approvedBy     String?
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  center         Center        @relation(fields: [centerId], references: [id])
+}
+
+model Announcement {
+  id             String   @id @default(uuid())
+  title          String
+  content        String
+  image          String?
+  centerId       String
+  createdById    String
+  scope          String   @default("all")
+  targetHalqaIds String[] @default([])
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  center         Center   @relation(fields: [centerId], references: [id])
+  createdBy      User     @relation(fields: [createdById], references: [id])
+}
+
+model AppSetting {
+  id       String  @id @default(uuid())
+  key      String
+  value    String
+  centerId String?
+
+  @@unique([key, centerId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  body      String
+  type      String
+  targetId  String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "365802324260",
+    "project_id": "quran-center-app-f2670",
+    "storage_bucket": "quran-center-app-f2670.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:365802324260:android:c1a9c05238131cb34b73b1",
+        "android_client_info": {
+          "package_name": "com.quran.quran_center_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXIHqQ8YKRydgVUe7yaEZ3gxN5hZdcWqE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

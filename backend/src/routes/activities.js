@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+router.get('/', (req, res) => res.json({ success: true, data: [] }));
+router.post('/', (req, res) => res.json({ success: true, message: 'Created' }));
+router.get('/:id', (req, res) => res.json({ success: true, data: null }));
+router.put('/:id', (req, res) => res.json({ success: true, message: 'Updated' }));
+router.delete('/:id', (req, res) => res.json({ success: true, message: 'Deleted' }));
+router.post('/:id/consent', (req, res) => res.json({ success: true, message: 'Consent updated' }));
+router.post('/:id/attendance', (req, res) => res.json({ success: true, message: 'Attendance recorded' }));
+module.exports = router;
