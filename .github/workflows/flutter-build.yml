@@ -1,0 +1,44 @@
+name: Build Flutter APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # للسماح بالتشغيل اليدوي
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'  # يمكنك تغييره لإصدار Flutter المستخدم
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: |
+          cd quran_center_app
+          flutter pub get
+
+      - name: Generate code (if needed)
+        run: |
+          cd quran_center_app
+          flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Build APK
+        run: |
+          cd quran_center_app
+          flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: quran-center-app-release-apk
+          path: quran_center_app/build/app/outputs/flutter-apk/app-release.apk
