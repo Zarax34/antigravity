@@ -2,43 +2,56 @@ name: Build Flutter APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ Zarax34-patch-1 ]  # غيّر حسب حاجتك
   pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:  # للسماح بالتشغيل اليدوي
+    branches: [ Zarax34-patch-1 ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.19.0'  # يمكنك تغييره لإصدار Flutter المستخدم
-          channel: 'stable'
-          cache: true
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.10.0' # أو الإصدار الذي يناسب مشروعك
 
-      - name: Get dependencies
-        run: |
-          cd quran_center_app
-          flutter pub get
+    - name: Install dependencies
+      run: flutter pub get
 
-      - name: Generate code (if needed)
-        run: |
-          cd quran_center_app
-          flutter pub run build_runner build --delete-conflicting-outputs
+    - name: Build APK (debug)
+      run: flutter build apk --debug
 
-      - name: Build APK
-        run: |
-          cd quran_center_app
-          flutter build apk --release
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-debug-apk
+        path: build/app/outputs/flutter-apk/app-debug.apk
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: quran-center-app-release-apk
-          path: quran_center_app/build/app/outputs/flutter-apk/app-release.apk
+    # Optional: build release signed APK
+    - name: Decode Keystore
+      if: secrets.KEYSTORE_BASE64 != ''
+      run: |
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore.jks
+
+    - name: Build APK Release
+      if: secrets.KEYSTORE_BASE64 != ''
+      run: |
+        flutter build apk \
+          --release \
+          --no-tree-shake-icons \
+          --flavor prod \
+          --dart-define=FLAVOR=prod \
+          -t lib/main.dart
+      env:
+        JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF8"
+
+    - name: Upload Release APK
+      if: secrets.KEYSTORE_BASE64 != ''
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-release-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
